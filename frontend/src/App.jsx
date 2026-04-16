@@ -109,7 +109,7 @@ export default function App() {
     } catch (error) { console.error(error); } finally { setIsCreating(false); }
   };
 
-  // ✅ NEW: APPROVE PENDING CLIENT
+  // ✅ NEW: APPROVE PENDING CLIENT HANDLER
   const handleApproveClient = async (clientId) => {
     try {
       const response = await fetch(`https://villageapi-backend.onrender.com/api/admin/clients/${clientId}/approve`, {
@@ -211,14 +211,15 @@ export default function App() {
                       <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-xs font-semibold ${client.plan === 'Unlimited' ? 'bg-purple-100 text-purple-700' : client.plan === 'Pro' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{client.plan}</span></td>
                       <td className="px-6 py-4 font-mono text-xs text-gray-400 bg-gray-50 rounded px-2">{client.key}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 flex items-center w-max rounded-full text-xs font-medium ${client.status === 'Active' ? 'text-green-700' : client.status === 'PENDING_APPROVAL' ? 'text-yellow-700' : 'text-red-700'}`}>
+                        {/* ✅ UPDATED: Visual styling correctly displays PENDING_APPROVAL in yellow */}
+                        <span className={`px-2 py-1 flex items-center w-max rounded-full text-xs font-medium ${client.status === 'Active' ? 'text-green-700 bg-green-50' : client.status === 'PENDING_APPROVAL' ? 'text-yellow-700 bg-yellow-50' : 'text-red-700 bg-red-50'}`}>
                           <span className={`h-2 w-2 rounded-full mr-2 ${client.status === 'Active' ? 'bg-green-500' : client.status === 'PENDING_APPROVAL' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
                           {client.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {/* ✅ NEW: APPROVE BUTTON RENDERED DYNAMICALLY */}
-                        {client.status === 'Inactive' || client.status === 'PENDING_APPROVAL' ? (
+                        {/* ✅ NEW: Approve button shows up dynamically */}
+                        {client.status === 'PENDING_APPROVAL' || client.status === 'Inactive' ? (
                           <button 
                             onClick={() => handleApproveClient(client.id)}
                             className="text-green-600 hover:text-green-800 font-bold text-sm mr-4 transition-colors"

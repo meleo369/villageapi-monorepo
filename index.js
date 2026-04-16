@@ -229,10 +229,11 @@ app.get('/api/admin/clients', async (request, response) => {
     } catch (error) { response.status(500).json({ error: "Failed to fetch clients" }); }
 });
 
-// ✅ NEW ROUTE: Approve a pending B2B Client and generate their first API Key
+// ✅ FIXED ROUTE: Approve a pending B2B Client and generate their first API Key
 app.patch('/api/admin/clients/:id/approve', async (request, response) => {
     try {
-        const userId = request.params.id;
+        // 🐛 THE FIX: Convert the ID from a String to an Integer for Prisma!
+        const userId = parseInt(request.params.id, 10);
         
         // Generate a real, secure API Key
         const rawKey = crypto.randomBytes(16).toString('hex');
