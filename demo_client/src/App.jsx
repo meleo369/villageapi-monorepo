@@ -13,7 +13,7 @@ export default function App() {
     village: '', subDistrict: '', district: '', state: '', country: 'India'
   });
 
-  // 🌍 THE MAGIC: Calling your new API!
+  // 🌍 THE MAGIC: Calling your new LIVE API!
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
@@ -23,7 +23,7 @@ export default function App() {
     const searchAPI = async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`http://localhost:3000/api/v1/autocomplete?q=${query}`, {
+        const response = await fetch(`https://villageapi-backend.onrender.com/api/v1/autocomplete?q=${query}`, {
           headers: {
             // Using the live key you just generated!
             'x-api-key': 'ak_live_7890abcdef12345678'

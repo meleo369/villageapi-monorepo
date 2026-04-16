@@ -33,11 +33,11 @@ export default function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    fetch('http://localhost:3000/api/admin/clients')
+    fetch('https://villageapi-backend.onrender.com/api/admin/clients')
       .then(res => res.json()).then(data => { setDbClients(data); setIsClientLoading(false); })
       .catch(err => { console.error(err); setIsClientLoading(false); });
 
-    fetch('http://localhost:3000/api/admin/analytics')
+    fetch('https://villageapi-backend.onrender.com/api/admin/analytics')
       .then(res => res.json()).then(data => setAnalytics(data))
       .catch(err => console.error("Analytics fetch failed:", err));
   }, [isLoggedIn]);
@@ -46,7 +46,7 @@ export default function App() {
     if (!isLoggedIn || activeTab !== 'villages') return;
     
     setIsVillageLoading(true);
-    fetch(`http://localhost:3000/api/admin/villages?page=${currentVillagePage}&limit=15`)
+    fetch(`https://villageapi-backend.onrender.com/api/admin/villages?page=${currentVillagePage}&limit=15`)
       .then(res => res.ok ? res.json() : { data: [], pagination: {} })
       .then(data => {
         setVillages(data.data || []); 
@@ -63,7 +63,7 @@ export default function App() {
     setLoginError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/admin/login', {
+      const response = await fetch('https://villageapi-backend.onrender.com/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail, password: loginPassword })
@@ -94,7 +94,7 @@ export default function App() {
     e.preventDefault();
     setIsCreating(true);
     try {
-      const response = await fetch('http://localhost:3000/api/admin/clients', {
+      const response = await fetch('https://villageapi-backend.onrender.com/api/admin/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newEmail, planType: newPlan })
