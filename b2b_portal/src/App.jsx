@@ -11,7 +11,7 @@ const usageData = [
 
 export default function App() {
   // Navigation State
-  const [currentView, setCurrentView] = useState('login'); 
+  const [currentView, setCurrentView] = useState('login'); // 'login', 'register', 'dashboard'
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   // Form States
@@ -26,34 +26,21 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [copiedKey, setCopiedKey] = useState(null);
 
-  // 🛡️ REAL AUTHENTICATION HANDLERS
+  // MOCK LOGIN / REGISTER HANDLERS (We will wire these to the backend next!)
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
-    try {
-      const response = await fetch('https://villageapi-backend.onrender.com/api/b2b/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, businessName })
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccessMsg(data.message);
-        setTimeout(() => {
-          setSuccessMsg('');
-          setCurrentView('login');
-        }, 3000);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Connection error. Please try again.');
-    } finally {
+    // Simulating API Call
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      setSuccessMsg('Registration successful! Your account is pending Admin approval.');
+      setTimeout(() => {
+        setSuccessMsg('');
+        setCurrentView('login');
+      }, 3000);
+    }, 1500);
   };
 
   const handleLogin = async (e) => {
@@ -61,31 +48,19 @@ export default function App() {
     setIsLoading(true);
     setError('');
 
-    try {
-      const response = await fetch('https://villageapi-backend.onrender.com/api/b2b/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem('b2bToken', data.token);
+    // Simulating API Call (We will build the real backend route for this next)
+    setTimeout(() => {
+      setIsLoading(false);
+      if (email && password) {
         setIsLoggedIn(true);
         setCurrentView('dashboard');
       } else {
-        // 🛑 SECURITY FIX: This will now properly reject wrong passwords
-        setError(data.error || 'Invalid email or password.');
+        setError('Please enter both email and password.');
       }
-    } catch (err) {
-      setError('Could not connect to the database.');
-    } finally {
-      setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('b2bToken');
     setIsLoggedIn(false);
     setCurrentView('login');
     setEmail('');
@@ -98,15 +73,23 @@ export default function App() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // Login/Register View
+  // ==========================================
+  // VIEW: REGISTRATION & LOGIN SCREENS
+  // ==========================================
   if (currentView === 'login' || currentView === 'register') {
     const isLogin = currentView === 'login';
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center text-blue-600"><Building2 className="h-12 w-12" /></div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">VillageAPI B2B Portal</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">{isLogin ? 'Sign in to manage your API keys' : 'Register your business for API access'}</p>
+          <div className="flex justify-center text-blue-600">
+            <Building2 className="h-12 w-12" />
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            VillageAPI B2B Portal
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {isLogin ? 'Sign in to manage your API keys' : 'Register your business for API access'}
+          </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -117,28 +100,37 @@ export default function App() {
 
               {!isLogin && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Business Name</label>
-                  <div className="mt-1"><input type="text" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" /></div>
+                  <label className="block text-sm font-medium text-gray-700">Registered Business Name</label>
+                  <div className="mt-1">
+                    <input type="text" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Acme Logistics Pvt Ltd" />
+                  </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                <div className="mt-1"><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" /></div>
+                <label className="block text-sm font-medium text-gray-700">Business Email Address</label>
+                <div className="mt-1">
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="dev@company.com" />
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Password</label>
-                <div className="mt-1"><input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" /></div>
+                <div className="mt-1">
+                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                </div>
               </div>
 
-              <button type="submit" disabled={isLoading} className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
-                {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Register'}
-              </button>
+              <div>
+                <button type="submit" disabled={isLoading} className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors">
+                  {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Submit Registration'}
+                </button>
+              </div>
             </form>
+
             <div className="mt-6 border-t border-gray-200 pt-5 text-center">
-              <button type="button" onClick={() => setCurrentView(isLogin ? 'register' : 'login')} className="text-sm text-blue-600 font-medium">
-                {isLogin ? "Need an account? Register" : "Have an account? Sign in"}
+              <button type="button" onClick={() => setCurrentView(isLogin ? 'register' : 'login')} className="text-sm text-blue-600 hover:text-blue-500 font-medium transition-colors">
+                {isLogin ? "Don't have an account? Register here." : "Already registered? Sign in."}
               </button>
             </div>
           </div>
@@ -147,122 +139,159 @@ export default function App() {
     );
   }
 
-  // Dashboard View
+  // ==========================================
+  // VIEW: CLIENT DASHBOARD
+  // ==========================================
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
+      {/* Sidebar */}
       <div className="w-64 bg-slate-900 text-white flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800"><Building2 className="h-6 w-6 text-blue-400 mr-2" /><span className="text-xl font-bold">Client Portal</span></div>
+        <div className="h-16 flex items-center px-6 border-b border-slate-800">
+          <Building2 className="h-6 w-6 text-blue-400 mr-2" />
+          <span className="text-xl font-bold">Client Portal</span>
+        </div>
+        
+        <div className="p-4 border-b border-slate-800">
+          <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Current Plan</p>
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Premium Tier</span>
+            <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full border border-blue-500/30">Active</span>
+          </div>
+        </div>
+
         <nav className="flex-1 px-4 py-6 space-y-2">
-          <div onClick={() => setActiveTab('overview')} className={`flex items-center px-4 py-3 rounded-lg cursor-pointer ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><Activity className="h-5 w-5 mr-3" /> Overview</div>
-          <div onClick={() => setActiveTab('keys')} className={`flex items-center px-4 py-3 rounded-lg cursor-pointer ${activeTab === 'keys' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><Key className="h-5 w-5 mr-3" /> API Credentials</div>
-          {/* ✅ FIXED: Added onClick to Documentation */}
-          <div onClick={() => setActiveTab('docs')} className={`flex items-center px-4 py-3 rounded-lg cursor-pointer ${activeTab === 'docs' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}><BookOpen className="h-5 w-5 mr-3" /> Documentation</div>
+          <div onClick={() => setActiveTab('overview')} className={`flex items-center px-4 py-3 rounded-lg font-medium cursor-pointer transition-colors ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
+            <Activity className="h-5 w-5 mr-3" /> Overview & Usage
+          </div>
+          <div onClick={() => setActiveTab('keys')} className={`flex items-center px-4 py-3 rounded-lg font-medium cursor-pointer transition-colors ${activeTab === 'keys' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
+            <Key className="h-5 w-5 mr-3" /> API Credentials
+          </div>
+          <div onClick={() => setActiveTab('docs')} className={`flex items-center px-4 py-3 rounded-lg font-medium cursor-pointer transition-colors ${activeTab === 'docs' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
+            <BookOpen className="h-5 w-5 mr-3" /> Documentation
+          </div>
         </nav>
-        <div className="p-4 border-t border-slate-800"><button onClick={handleLogout} className="flex items-center w-full px-4 py-3 text-slate-400 hover:text-white rounded-lg transition-colors"><LogOut className="h-5 w-5 mr-3" /> Sign Out</button></div>
+        
+        <div className="p-4 border-t border-slate-800">
+          <button onClick={handleLogout} className="flex items-center w-full px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <LogOut className="h-5 w-5 mr-3" /> Sign Out
+          </button>
+        </div>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-gray-800 capitalize">{activeTab}</h1>
-          <div className="flex items-center"><span className="text-sm text-gray-500 mr-4">{email}</span><div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">{email ? email.charAt(0).toUpperCase() : 'U'}</div></div>
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10">
+          <h1 className="text-2xl font-semibold text-gray-800">
+            {activeTab === 'overview' ? 'Dashboard Overview' : 'API Credentials'}
+          </h1>
+          <div className="flex items-center">
+            <span className="text-sm text-gray-500 mr-4">{email || 'developer@company.com'}</span>
+            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+              {email ? email.charAt(0).toUpperCase() : 'D'}
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 overflow-auto p-8">
+          
+          {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
-             <div className="max-w-6xl mx-auto space-y-6">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                 <h3 className="text-sm font-medium text-gray-500 mb-1">Requests Today</h3>
-                 <div className="flex items-end justify-between">
-                   <p className="text-3xl font-bold text-gray-900">2,450</p>
-                   <span className="text-sm text-green-600 font-medium">+12% from yesterday</span>
-                 </div>
-               </div>
-               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                 <h3 className="text-sm font-medium text-gray-500 mb-1">Daily Quota Usage</h3>
-                 <div className="flex items-end justify-between mb-2">
-                   <p className="text-3xl font-bold text-gray-900">4.9%</p>
-                   <span className="text-sm text-gray-500">50,000 limit</span>
-                 </div>
-                 <div className="w-full bg-gray-200 rounded-full h-2">
-                   <div className="bg-blue-600 h-2 rounded-full" style={{ width: '4.9%' }}></div>
-                 </div>
-               </div>
-               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                 <h3 className="text-sm font-medium text-gray-500 mb-1">Avg Response Time</h3>
-                 <p className="text-3xl font-bold text-gray-900">42<span className="text-lg text-gray-500 ml-1">ms</span></p>
-               </div>
-             </div>
+            <div className="max-w-6xl mx-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Requests Today</h3>
+                  <div className="flex items-end justify-between">
+                    <p className="text-3xl font-bold text-gray-900">2,450</p>
+                    <span className="text-sm text-green-600 font-medium">+12% from yesterday</span>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Daily Quota Usage</h3>
+                  <div className="flex items-end justify-between mb-2">
+                    <p className="text-3xl font-bold text-gray-900">4.9%</p>
+                    <span className="text-sm text-gray-500">50,000 limit</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '4.9%' }}></div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Avg Response Time</h3>
+                  <p className="text-3xl font-bold text-gray-900">42<span className="text-lg text-gray-500 ml-1">ms</span></p>
+                </div>
+              </div>
 
-             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-               <h3 className="text-lg font-semibold text-gray-800 mb-6">API Usage (Last 7 Days)</h3>
-               <ResponsiveContainer width="100%" height={300}>
-                 <LineChart data={usageData}>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#6B7280'}} dy={10} />
-                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280'}} dx={-10} />
-                   <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                   <Line type="monotone" dataKey="requests" stroke="#2563EB" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
-                 </LineChart>
-               </ResponsiveContainer>
-             </div>
-           </div>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-800 mb-6">API Usage (Last 7 Days)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={usageData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#6B7280'}} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280'}} dx={-10} />
+                    <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Line type="monotone" dataKey="requests" stroke="#2563EB" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
 
+          {/* API KEYS TAB */}
           {activeTab === 'keys' && (
             <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center border-l-4 border-l-blue-500">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Production Key</h2>
-                <p className="text-sm text-gray-500 mt-1">Keep this key secret. Never expose it in client-side browser code.</p>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center border-l-4 border-l-blue-500">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Production Key</h2>
+                  <p className="text-sm text-gray-500 mt-1">Keep this key secret. Never expose it in client-side browser code.</p>
+                </div>
+                <button className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                  Roll Key (Regenerate)
+                </button>
               </div>
-              <button className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                Roll Key (Regenerate)
-              </button>
-            </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider text-xs">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Environment</th>
-                    <th className="px-6 py-4 font-medium">API Key</th>
-                    <th className="px-6 py-4 font-medium text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">Production API</td>
-                    <td className="px-6 py-4 font-mono text-sm">ak_live_7890abcdef12345678</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => copyToClipboard('ak_live_7890abcdef12345678', 1)}
-                        className="text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center"
-                      >
-                        {copiedKey === 1 ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
-                      </button>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">Testing / Sandbox</td>
-                    <td className="px-6 py-4 font-mono text-sm">ak_test_1234qwerty09876543</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => copyToClipboard('ak_test_1234qwerty09876543', 2)}
-                        className="text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center"
-                      >
-                        {copiedKey === 2 ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <table className="w-full text-left text-sm text-gray-600">
+                  <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider text-xs">
+                    <tr>
+                      <th className="px-6 py-4 font-medium">Environment</th>
+                      <th className="px-6 py-4 font-medium">API Key</th>
+                      <th className="px-6 py-4 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-gray-900">Production API</td>
+                      <td className="px-6 py-4 font-mono text-sm">ak_live_7890abcdef12345678</td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => copyToClipboard('ak_live_7890abcdef12345678', 1)}
+                          className="text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center"
+                        >
+                          {copiedKey === 1 ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
+                        </button>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-gray-900">Testing / Sandbox</td>
+                      <td className="px-6 py-4 font-mono text-sm">ak_test_1234qwerty09876543</td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => copyToClipboard('ak_test_1234qwerty09876543', 2)}
+                          className="text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center"
+                        >
+                          {copiedKey === 2 ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
           )}
-
+          {/* DOCUMENTATION TAB */}
           {activeTab === 'docs' && (
             <div className="max-w-4xl mx-auto space-y-6">
+              
               <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">API Documentation</h2>
                 <p className="text-gray-500 mb-8">Welcome to the VillageAPI developer guide. Here you will find everything you need to integrate our lightning-fast location data into your application.</p>
@@ -310,6 +339,7 @@ export default function App() {
               </div>
             </div>
           )}
+
         </main>
       </div>
     </div>
