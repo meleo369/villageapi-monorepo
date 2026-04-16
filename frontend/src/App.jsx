@@ -109,6 +109,29 @@ export default function App() {
     } catch (error) { console.error(error); } finally { setIsCreating(false); }
   };
 
+  // ✅ NEW: APPROVE PENDING CLIENT
+  const handleApproveClient = async (clientId) => {
+    try {
+      const response = await fetch(`https://villageapi-backend.onrender.com/api/admin/clients/${clientId}/approve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        // Refresh the client list so the UI updates instantly
+        const refreshRes = await fetch('https://villageapi-backend.onrender.com/api/admin/clients');
+        const refreshData = await refreshRes.json();
+        setDbClients(refreshData);
+      } else {
+        alert("Failed to approve client.");
+      }
+    } catch (err) {
+      console.error("Failed to approve client", err);
+      alert("Connection error. Could not approve client.");
+    }
+  };
+
   const getNavClass = (tabName) => activeTab === tabName
       ? "flex items-center px-4 py-3 text-blue-600 bg-blue-50 rounded-lg font-medium cursor-pointer"
       : "flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors cursor-pointer";
@@ -183,7 +206,29 @@ export default function App() {
                 <thead className="bg-white border-b border-gray-200 text-gray-500 uppercase tracking-wider text-xs"><tr><th className="px-6 py-4 font-medium">Client Email</th><th className="px-6 py-4 font-medium">Plan Type</th><th className="px-6 py-4 font-medium">API Key</th><th className="px-6 py-4 font-medium">Status</th><th className="px-6 py-4 font-medium text-right">Actions</th></tr></thead>
                 <tbody className="divide-y divide-gray-100">
                   {isClientLoading ? (<tr><td colSpan="5" className="px-6 py-8 text-center text-gray-400">Fetching live data from NeonDB...</td></tr>) : (dbClients || []).length === 0 ? (<tr><td colSpan="5" className="px-6 py-8 text-center text-gray-400">No clients found in the database.</td></tr>) : (dbClients || []).map((client) => (
-                    <tr key={client.id} className="hover:bg-gray-50 transition-colors"><td className="px-6 py-4 font-medium text-gray-900">{client.email}</td><td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-xs font-semibold ${client.plan === 'Unlimited' ? 'bg-purple-100 text-purple-700' : client.plan === 'Pro' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{client.plan}</span></td><td className="px-6 py-4 font-mono text-xs text-gray-400 bg-gray-50 rounded px-2">{client.key}</td><td className="px-6 py-4"><span className={`px-2 py-1 flex items-center w-max rounded-full text-xs font-medium ${client.status === 'Active' ? 'text-green-700' : 'text-red-700'}`}><span className={`h-2 w-2 rounded-full mr-2 ${client.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}></span>{client.status}</span></td><td className="px-6 py-4 text-right"><button className="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">Revoke</button></td></tr>
+                    <tr key={client.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-gray-900">{client.email}</td>
+                      <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-xs font-semibold ${client.plan === 'Unlimited' ? 'bg-purple-100 text-purple-700' : client.plan === 'Pro' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{client.plan}</span></td>
+                      <td className="px-6 py-4 font-mono text-xs text-gray-400 bg-gray-50 rounded px-2">{client.key}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 flex items-center w-max rounded-full text-xs font-medium ${client.status === 'Active' ? 'text-green-700' : client.status === 'PENDING_APPROVAL' ? 'text-yellow-700' : 'text-red-700'}`}>
+                          <span className={`h-2 w-2 rounded-full mr-2 ${client.status === 'Active' ? 'bg-green-500' : client.status === 'PENDING_APPROVAL' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
+                          {client.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {/* ✅ NEW: APPROVE BUTTON RENDERED DYNAMICALLY */}
+                        {client.status === 'Inactive' || client.status === 'PENDING_APPROVAL' ? (
+                          <button 
+                            onClick={() => handleApproveClient(client.id)}
+                            className="text-green-600 hover:text-green-800 font-bold text-sm mr-4 transition-colors"
+                          >
+                            Approve
+                          </button>
+                        ) : null}
+                        <button className="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">Revoke</button>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>

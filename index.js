@@ -160,7 +160,12 @@ app.post('/api/b2b/register', async (request, response) => {
 app.post('/api/b2b/login', async (request, response) => {
     const { email, password } = request.body;
     try {
-        const user = await prisma.user.findUnique({ where: { email } });
+        // ✅ CHANGED: We now "include" the apiKeys so we can send them to the frontend
+        const user = await prisma.user.findUnique({ 
+            where: { email },
+            include: { apiKeys: true } 
+        });
+        
         if (!user) return response.status(401).json({ success: false, error: 'Invalid credentials.' });
 
         const isValidPassword = await bcrypt.compare(password, user.password);
@@ -172,10 +177,19 @@ app.post('/api/b2b/login', async (request, response) => {
             { expiresIn: '24h' }
         );
 
+        // ✅ Grab their real key if they have one, otherwise say pending
+        const userKey = user.apiKeys.length > 0 ? user.apiKeys[0].key : "No key generated yet";
+
         response.json({ 
             success: true, 
             token, 
-            user: { email: user.email, businessName: user.businessName, plan: user.planType, status: user.status } 
+            user: { 
+                email: user.email, 
+                businessName: user.businessName, 
+                plan: user.planType, 
+                status: user.status,
+                apiKey: userKey // ✅ Send the real key to the frontend!
+            } 
         });
     } catch (error) {
         console.error("Login Error:", error);
