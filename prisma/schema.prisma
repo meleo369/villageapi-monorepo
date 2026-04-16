@@ -49,11 +49,14 @@ model Village {
   subDistrict   SubDistrict @relation(fields: [subDistrictId], references: [id])
 }
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  planType  String    @default("Free") // Free, Premium, Pro, Unlimited
-  apiKeys   ApiKey[]
-  createdAt DateTime  @default(now())
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  password     String?  // ✅ ADDED THE '?' HERE! This makes it optional so Prisma stops panicking.
+  businessName String?  
+  status       String   @default("PENDING_APPROVAL") 
+  planType     String   @default("Free")
+  apiKeys      ApiKey[]
+  createdAt    DateTime @default(now())
 }
 
 model ApiKey {
