@@ -21,10 +21,10 @@ const apiLimiter = rateLimit({
     max: 50, 
     standardHeaders: true, 
     legacyHeaders: false,
-    // 🟢 FIXED: Replaced request.ip with "anonymous" to satisfy strict IPv6 security
     keyGenerator: (request) => request.header('x-api-key') || "anonymous",
     message: { success: false, error: "RATE_LIMITED", message: "Quota exceeded." }
 });
+
 // 🛑 THE BOUNCER (Database-Driven Middleware for API Keys)
 const requireApiKey = async (request, response, next) => {
     try {
@@ -128,6 +128,63 @@ app.get('/api/v1/subdistricts/:subDistrictId/villages', requireApiKey, async (re
 
 
 // ============================================================================
+// 🏢 B2B PORTAL AUTHENTICATION
+// ============================================================================
+
+app.post('/api/b2b/register', async (request, response) => {
+    const { email, password, businessName } = request.body;
+    try {
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        if (existingUser) return response.status(400).json({ success: false, error: 'Email already registered.' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Save to NeonDB (Defaults to PENDING status)
+        const newUser = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                businessName,
+                planType: 'Free',
+                status: 'PENDING_APPROVAL' 
+            }
+        });
+
+        response.json({ success: true, message: 'Registration successful! Pending admin approval.' });
+    } catch (error) {
+        console.error("Registration Error:", error);
+        response.status(500).json({ success: false, error: 'Internal Server Error. Please check Prisma Schema.' });
+    }
+});
+
+app.post('/api/b2b/login', async (request, response) => {
+    const { email, password } = request.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return response.status(401).json({ success: false, error: 'Invalid credentials.' });
+
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) return response.status(401).json({ success: false, error: 'Invalid credentials.' });
+
+        const token = jwt.sign(
+            { userId: user.id, email: user.email }, 
+            JWT_SECRET, 
+            { expiresIn: '24h' }
+        );
+
+        response.json({ 
+            success: true, 
+            token, 
+            user: { email: user.email, businessName: user.businessName, plan: user.planType, status: user.status } 
+        });
+    } catch (error) {
+        console.error("Login Error:", error);
+        response.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+});
+
+
+// ============================================================================
 // 🔒 INTERNAL ADMIN ENDPOINTS (Secured by JWT & Password)
 // ============================================================================
 
@@ -152,10 +209,37 @@ app.get('/api/admin/clients', async (request, response) => {
         const users = await prisma.user.findMany({ include: { apiKeys: true } });
         const formattedClients = users.map(u => ({
             id: u.id, email: u.email, plan: u.planType,
-            key: u.apiKeys[0]?.key || "No Key Generated", status: u.apiKeys[0]?.isActive ? 'Active' : 'Inactive'
+            key: u.apiKeys[0]?.key || "No Key Generated", status: u.status // ✅ Fixed this to show actual user status
         }));
         response.json(formattedClients);
     } catch (error) { response.status(500).json({ error: "Failed to fetch clients" }); }
+});
+
+// ✅ NEW ROUTE: Approve a pending B2B Client and generate their first API Key
+app.patch('/api/admin/clients/:id/approve', async (request, response) => {
+    try {
+        const userId = request.params.id;
+        
+        // Generate a real, secure API Key
+        const rawKey = crypto.randomBytes(16).toString('hex');
+        const secureApiKey = `ak_live_${rawKey}`;
+
+        // Update the user to Active AND create their key in the database
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                status: 'Active',
+                apiKeys: {
+                    create: { key: secureApiKey, secretHash: 'auto_generated_hash' }
+                }
+            }
+        });
+        
+        response.json({ success: true, message: "User approved and API key generated." });
+    } catch (error) {
+        console.error("Approval Error:", error);
+        response.status(500).json({ success: false, error: "Failed to approve user." });
+    }
 });
 
 app.post('/api/admin/clients', async (request, response) => {
@@ -168,12 +252,12 @@ app.post('/api/admin/clients', async (request, response) => {
 
         const newUser = await prisma.user.create({
             data: {
-                email: email, planType: planType || 'Free',
+                email: email, planType: planType || 'Free', status: 'Active',
                 apiKeys: { create: { key: secureApiKey, secretHash: 'admin_generated_dummy_hash' } }
             },
             include: { apiKeys: true }
         });
-        response.status(201).json({ id: newUser.id, email: newUser.email, plan: newUser.planType, key: newUser.apiKeys[0].key, status: 'Active' });
+        response.status(201).json({ id: newUser.id, email: newUser.email, plan: newUser.planType, key: newUser.apiKeys[0].key, status: newUser.status });
     } catch (error) { response.status(500).json({ error: "Failed to create user." }); }
 });
 
