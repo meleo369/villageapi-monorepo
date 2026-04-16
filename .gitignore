@@ -1,0 +1,9 @@
+node_modules/
+.env
+venv/
+*.log
+.DS_Store
+frontend/node_modules/
+frontend/dist/
+demo_client/node_modules/
+demo_client/dist/

@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id     Int       @id @default(autoincrement())
+  code   String    @unique
+  name   String
+  states State[]
+}
+
+model State {
+  id        Int        @id @default(autoincrement())
+  code      String     @unique
+  name      String
+  countryId Int
+  country   Country    @relation(fields: [countryId], references: [id])
+  districts District[]
+}
+
+model District {
+  id           Int           @id @default(autoincrement())
+  code         String        @unique
+  name         String
+  stateId      Int
+  state        State         @relation(fields: [stateId], references: [id])
+  subDistricts SubDistrict[]
+}
+
+model SubDistrict {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  name       String
+  districtId Int
+  district   District  @relation(fields: [districtId], references: [id])
+  villages   Village[]
+}
+
+model Village {
+  id            Int         @id @default(autoincrement())
+  code          String      @unique
+  name          String
+  subDistrictId Int
+  subDistrict   SubDistrict @relation(fields: [subDistrictId], references: [id])
+}
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  planType  String    @default("Free") // Free, Premium, Pro, Unlimited
+  apiKeys   ApiKey[]
+  createdAt DateTime  @default(now())
+}
+
+model ApiKey {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  secretHash String   // We store a hash, NEVER the plain text secret
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+// ... (Keep all your existing models like User, ApiKey, Village, etc. exactly as they are) ...
+
+// 🔒 NEW: Secure Admin Table
+model Admin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   // We will store a bcrypt hash here, never the real password
+  role         String   @default("SUPER_ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
