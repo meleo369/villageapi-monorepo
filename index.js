@@ -256,6 +256,31 @@ app.patch('/api/admin/clients/:id/approve', async (request, response) => {
         response.status(500).json({ success: false, error: "Failed to approve user." });
     }
 });
+// ✅ NEW ROUTE: Revoke a B2B Client's access and disable their API keys
+app.patch('/api/admin/clients/:id/revoke', async (request, response) => {
+    try {
+        const userId = parseInt(request.params.id, 10);
+
+        // Update user status to Inactive and disable all their API keys
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                status: 'Inactive',
+                apiKeys: {
+                    updateMany: {
+                        where: { userId: userId },
+                        data: { isActive: false }
+                    }
+                }
+            }
+        });
+        
+        response.json({ success: true, message: "User access revoked." });
+    } catch (error) {
+        console.error("Revoke Error:", error);
+        response.status(500).json({ success: false, error: "Failed to revoke user." });
+    }
+});
 
 app.post('/api/admin/clients', async (request, response) => {
     try {
