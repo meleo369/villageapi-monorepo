@@ -132,6 +132,30 @@ export default function App() {
     }
   };
 
+  // ✅ NEW: REVOKE CLIENT HANDLER
+  const handleRevokeClient = async (clientId) => {
+    if (!window.confirm("Are you sure you want to revoke this client's API access?")) return;
+
+    try {
+      const response = await fetch(`https://villageapi-backend.onrender.com/api/admin/clients/${clientId}/revoke`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        const refreshRes = await fetch('https://villageapi-backend.onrender.com/api/admin/clients');
+        const refreshData = await refreshRes.json();
+        setDbClients(refreshData);
+      } else {
+        alert("Failed to revoke client.");
+      }
+    } catch (err) {
+      console.error("Failed to revoke client", err);
+      alert("Connection error. Could not revoke client.");
+    }
+  };
+
   const getNavClass = (tabName) => activeTab === tabName
       ? "flex items-center px-4 py-3 text-blue-600 bg-blue-50 rounded-lg font-medium cursor-pointer"
       : "flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors cursor-pointer";
@@ -211,14 +235,12 @@ export default function App() {
                       <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-xs font-semibold ${client.plan === 'Unlimited' ? 'bg-purple-100 text-purple-700' : client.plan === 'Pro' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{client.plan}</span></td>
                       <td className="px-6 py-4 font-mono text-xs text-gray-400 bg-gray-50 rounded px-2">{client.key}</td>
                       <td className="px-6 py-4">
-                        {/* ✅ UPDATED: Visual styling correctly displays PENDING_APPROVAL in yellow */}
                         <span className={`px-2 py-1 flex items-center w-max rounded-full text-xs font-medium ${client.status === 'Active' ? 'text-green-700 bg-green-50' : client.status === 'PENDING_APPROVAL' ? 'text-yellow-700 bg-yellow-50' : 'text-red-700 bg-red-50'}`}>
                           <span className={`h-2 w-2 rounded-full mr-2 ${client.status === 'Active' ? 'bg-green-500' : client.status === 'PENDING_APPROVAL' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
                           {client.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {/* ✅ NEW: Approve button shows up dynamically */}
                         {client.status === 'PENDING_APPROVAL' || client.status === 'Inactive' ? (
                           <button 
                             onClick={() => handleApproveClient(client.id)}
@@ -227,7 +249,14 @@ export default function App() {
                             Approve
                           </button>
                         ) : null}
-                        <button className="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">Revoke</button>
+                        {/* ✅ NEW: DYNAMIC REVOKE BUTTON */}
+                        <button 
+                          onClick={() => handleRevokeClient(client.id)}
+                          disabled={client.status === 'Inactive'}
+                          className={`font-medium text-sm transition-colors ${client.status === 'Inactive' ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
+                        >
+                          {client.status === 'Inactive' ? 'Revoked' : 'Revoke'}
+                        </button>
                       </td>
                     </tr>
                   ))}
